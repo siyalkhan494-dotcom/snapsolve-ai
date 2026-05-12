@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SnapSolve AI
 
 AI-powered study assistant using Google's Gemma 4 model.
@@ -22,3 +23,7 @@ AI-powered study assistant using Google's Gemma 4 model.
 
 ## Built For
 DEV Community Gemma 4 Challenge 2026
+=======
+# snapsolve-ai
+AI-powered study assistant for students using OpenRouter and Gemma-style LLMs. Helps explain concepts, solve questions, and simplify learning.
+>>>>>>> 20741ee5573d44785c5e812017d36f3da621eba9
