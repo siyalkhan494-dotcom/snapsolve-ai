@@ -1,0 +1,27 @@
+# Virtual environments
+venv/
+.venv/
+
+# API keys
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.spec
+
+# VS Code
+.vscode/
+
+# PyInstaller
+build/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploaded images
+static/uploads/*
+!static/uploads/.gitkeep
