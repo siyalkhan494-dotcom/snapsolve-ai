@@ -7,72 +7,85 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <button id="themeToggle" class="theme-toggle" title="Toggle light/dark mode">🌙</button>
+
     <div class="container">
-        <!-- Header -->
         <header>
             <h1>🎓 SnapSolve AI</h1>
-            <p class="subtitle">Your AI Study Assistant — Powered by Gemma 4</p>
+            <p class="subtitle">Exam-Style Answers Powered by Gemma 4</p>
         </header>
 
-        <!-- Input Section -->
-        <div class="card">
-            <div class="input-group">
-                <label for="subject">Subject:</label>
-                <select id="subject">
-                    <option value="general">General Knowledge</option>
-                    <option value="math">Mathematics</option>
-                    <option value="physics">Physics</option>
-                    <option value="english">English</option>
-                </select>
-            </div>
+        <div class="main-layout">
+            <!-- Sidebar - History -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <h3>📋 History</h3>
+                    <button id="clearHistoryBtn" class="btn-small">Clear</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <p class="empty-state">No questions yet</p>
+                </div>
+            </aside>
 
-            <div class="input-group">
-                <label for="question">Your Question:</label>
-                <textarea 
-                    id="question" 
-                    placeholder="Type your question here...&#10;&#10;Example: What is photosynthesis?&#10;Example: Solve for x: 2x + 5 = 15&#10;Example: Explain Newton's third law"
-                    rows="5"
-                ></textarea>
-            </div>
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Input Card -->
+                <div class="card">
+                    <div class="input-row">
+                        <select id="subject" class="select-small">
+                            <option value="general">General</option>
+                            <option value="math">Math</option>
+                            <option value="physics">Physics</option>
+                            <option value="english">English</option>
+                        </select>
+                    </div>
+                    <textarea 
+                        id="question" 
+                        placeholder="Type your question here..."
+                        rows="3"
+                    ></textarea>
+                    <div class="button-group">
+                        <button id="askBtn" class="btn btn-primary">
+                            🔍 Detailed Answer
+                        </button>
+                        <button id="shortBtn" class="btn btn-secondary">
+                            ⚡ Short Answer
+                        </button>
+                    </div>
+                </div>
 
-            <div class="button-group">
-                <button id="askBtn" class="btn btn-primary">
-                    🔍 Explain in Detail
-                </button>
-                <button id="shortBtn" class="btn btn-secondary">
-                    ⚡ Short Answer
-                </button>
-            </div>
+                <!-- Loading -->
+                <div id="loading" class="card loading-card" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Generating answer...</p>
+                </div>
+
+                <!-- Answer -->
+                <div id="result" class="card result-card" style="display: none;">
+                    <div class="answer-content" id="answerContent"></div>
+                    
+                    <!-- Word Count & Reading Time -->
+                    <div class="answer-meta" id="answerMeta" style="display:none;">
+                        <span id="wordCount"></span> • <span id="readTime"></span>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="answer-actions" id="answerActions" style="display:none;">
+                        <button id="copyBtn" class="btn-action">📋 Copy</button>
+                        <button id="pdfBtn" class="btn-action">📄 PDF</button>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <div id="error" class="card error-card" style="display: none;">
+                    <p id="errorMessage"></p>
+                </div>
+            </main>
         </div>
 
-        <!-- Loading Indicator -->
-        <div id="loading" class="card loading-card" style="display: none;">
-            <div class="spinner"></div>
-            <p>Gemma 4 is thinking...</p>
-        </div>
-
-        <!-- Result Section -->
-        <div id="result" class="card result-card" style="display: none;">
-            <div class="result-header">
-                <h2>📝 Answer</h2>
-                <span id="modeBadge" class="badge"></span>
-            </div>
-            <div id="answerContent" class="answer-content"></div>
-            <div class="result-footer">
-                <span id="subjectBadge" class="badge"></span>
-                <span class="model-info">Powered by Gemma 4</span>
-            </div>
-        </div>
-
-        <!-- Error Section -->
-        <div id="error" class="card error-card" style="display: none;">
-            <p id="errorMessage"></p>
-        </div>
-
-        <!-- Footer -->
         <footer>
-            <p>Built for the <a href="https://dev.to/challenges/gemma4" target="_blank">DEV Gemma 4 Challenge</a></p>
-            <p>Using Google's Gemma 4 model via AI Studio</p>
+            <p>Gemma 4 Challenge • <a href="https://github.com/siyalkhan494-dotcom/snapsolve-ai" target="_blank">GitHub</a></p>
         </footer>
     </div>
 
