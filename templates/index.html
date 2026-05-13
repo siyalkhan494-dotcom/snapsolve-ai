@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapSolve AI - Study Assistant</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,6 +12,7 @@
     <button id="themeToggle" class="theme-toggle" title="Toggle light/dark mode">🌙</button>
 
     <div class="container">
+        <!-- Header -->
         <header>
             <h1>🎓 SnapSolve AI</h1>
             <p class="subtitle">Exam-Style Answers Powered by Gemma 4</p>
@@ -31,34 +33,45 @@
             <!-- Main Content -->
             <main class="main-content">
                 <!-- Input Card -->
-                <div class="card">
+                <div class="card input-card">
                     <div class="input-row">
                         <select id="subject" class="select-small">
-                            <option value="general">General</option>
-                            <option value="math">Math</option>
-                            <option value="physics">Physics</option>
-                            <option value="english">English</option>
+                            <option value="general">📚 General</option>
+                            <option value="math">🔢 Math</option>
+                            <option value="physics">⚡ Physics</option>
+                            <option value="english">📝 English</option>
                         </select>
                     </div>
-                    <textarea 
-                        id="question" 
-                        placeholder="Type your question here..."
-                        rows="3"
-                    ></textarea>
+                    
+                    <div class="textarea-wrapper">
+                        <textarea 
+                            id="question" 
+                            placeholder="Type your question here...&#10;&#10;Example: What is photosynthesis?&#10;Example: Solve for x: 2x + 5 = 15&#10;Example: Explain Newton's third law"
+                            rows="4"
+                            maxlength="2000"
+                        ></textarea>
+                        <button id="voiceBtn" class="btn-voice" title="Speak your question">🎤</button>
+                    </div>
+                    
+                    <div class="char-counter">
+                        <span id="charCount">0</span>/2000 characters
+                    </div>
+
                     <div class="button-group">
-                        <button id="askBtn" class="btn btn-primary">
-                            🔍 Detailed Answer
-                        </button>
-                        <button id="shortBtn" class="btn btn-secondary">
-                            ⚡ Short Answer
-                        </button>
+                        <button id="askBtn" class="btn btn-primary">🔍 Detailed</button>
+                        <button id="shortBtn" class="btn btn-secondary">⚡ Short</button>
+                        <button id="urduBtn" class="btn btn-accent">🇵🇰 Urdu</button>
+                    </div>
+                    
+                    <div class="shortcuts-info">
+                        Press <kbd>Enter</kbd> for detailed • <kbd>Ctrl+Enter</kbd> for short
                     </div>
                 </div>
 
                 <!-- Loading -->
                 <div id="loading" class="card loading-card" style="display: none;">
                     <div class="spinner"></div>
-                    <p>Generating answer...</p>
+                    <p>Gemma 4 is generating your answer...</p>
                 </div>
 
                 <!-- Answer -->
@@ -67,13 +80,23 @@
                     
                     <!-- Word Count & Reading Time -->
                     <div class="answer-meta" id="answerMeta" style="display:none;">
-                        <span id="wordCount"></span> • <span id="readTime"></span>
+                        <span>📊 <span id="wordCount"></span></span>
+                        <span>⏱️ <span id="readTime"></span></span>
                     </div>
                     
                     <!-- Action Buttons -->
                     <div class="answer-actions" id="answerActions" style="display:none;">
                         <button id="copyBtn" class="btn-action">📋 Copy</button>
                         <button id="pdfBtn" class="btn-action">📄 PDF</button>
+                        <button id="shareBtn" class="btn-action">🔗 Share</button>
+                    </div>
+                    
+                    <!-- Rating -->
+                    <div class="answer-rating" id="answerRating" style="display:none;">
+                        <span>Was this helpful?</span>
+                        <button class="rating-btn" onclick="rateAnswer('up')">👍</button>
+                        <button class="rating-btn" onclick="rateAnswer('down')">👎</button>
+                        <span id="ratingFeedback"></span>
                     </div>
                 </div>
 
@@ -84,8 +107,12 @@
             </main>
         </div>
 
+        <!-- Footer -->
         <footer>
-            <p>Gemma 4 Challenge • <a href="https://github.com/siyalkhan494-dotcom/snapsolve-ai" target="_blank">GitHub</a></p>
+            <p>
+                🏆 Built for <a href="https://dev.to/challenges/gemma4" target="_blank">DEV Gemma 4 Challenge</a> 
+                • <a href="https://github.com/siyalkhan494-dotcom/snapsolve-ai" target="_blank">GitHub</a>
+            </p>
         </footer>
     </div>
 

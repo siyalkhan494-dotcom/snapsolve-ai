@@ -1,6 +1,7 @@
 """
 SnapSolve AI - AI Study Assistant
 Uses Gemma 4 via OpenRouter API.
+Features: Detailed/Short answers, Urdu mode, History, Dark mode
 Built for the DEV Community Gemma 4 Challenge.
 """
 
@@ -9,6 +10,7 @@ import requests
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify
 
+# ─── CONFIGURATION ───────────────────────────────────────────
 load_dotenv()
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL_NAME = "google/gemma-4-31b-it"
@@ -17,9 +19,10 @@ if not API_KEY:
     raise ValueError("❌ OPENROUTER_API_KEY not found in .env file")
 
 app = Flask(__name__)
-
-# Store chat history per session (in production, use a database)
 chat_sessions = {}
+
+
+# ─── PROMPT BUILDERS ─────────────────────────────────────────
 
 def build_prompt(question, subject, mode, history):
     """Build exam-style prompt with no fluff."""
@@ -66,11 +69,10 @@ RULES:
     
     subject_guide = subject_guides.get(subject, subject_guides["general"])
     
-    # Include chat history
     history_text = ""
     if history:
         history_text = "Previous conversation:\n"
-        for entry in history[-4:]:  # Last 4 exchanges for context
+        for entry in history[-4:]:
             history_text += f"Q: {entry['question']}\nA: {entry['answer'][:300]}...\n\n"
     
     return f"""{base_instruction}
@@ -87,10 +89,25 @@ Student's Question:
 Answer:"""
 
 
-def ask_gemma(question, subject, mode, history, session_id):
-    """Send question to Gemma 4 and get response."""
-    prompt = build_prompt(question, subject, mode, history)
-    
+def build_urdu_prompt(question):
+    """Build Urdu explanation prompt."""
+    return f"""You are an expert Pakistani teacher.
+Explain the following question in SIMPLE URDU language.
+Use Urdu script (not Roman Urdu).
+Keep it simple and easy for students.
+DO NOT include English words unless it's a technical term.
+Include examples in Urdu.
+Structure the answer with clear headings in Urdu.
+
+Question: {question}
+
+Urdu Explanation:"""
+
+
+# ─── AI CALLS ────────────────────────────────────────────────
+
+def call_gemma(prompt):
+    """Send prompt to Gemma 4 via OpenRouter."""
     try:
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -100,27 +117,14 @@ def ask_gemma(question, subject, mode, history, session_id):
             },
             json={
                 "model": MODEL_NAME,
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ]
+                "messages": [{"role": "user", "content": prompt}]
             },
             timeout=60
         )
         
         if response.status_code == 200:
             data = response.json()
-            answer = data["choices"][0]["message"]["content"]
-            
-            # Save to history
-            if session_id not in chat_sessions:
-                chat_sessions[session_id] = []
-            chat_sessions[session_id].append({
-                "question": question,
-                "answer": answer,
-                "subject": subject
-            })
-            
-            return answer
+            return data["choices"][0]["message"]["content"]
         else:
             return f"⚠️ API Error: {response.status_code}"
             
@@ -130,6 +134,8 @@ def ask_gemma(question, subject, mode, history, session_id):
         return f"⚠️ Error: {str(e)}"
 
 
+# ─── ROUTES ──────────────────────────────────────────────────
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -137,6 +143,7 @@ def home():
 
 @app.route('/ask', methods=['POST'])
 def ask():
+    """Handle question submission."""
     data = request.get_json()
     question = data.get('question', '').strip()
     subject = data.get('subject', 'general')
@@ -145,15 +152,23 @@ def ask():
     
     if not question:
         return jsonify({'error': 'Please enter a question.'}), 400
-    
     if len(question) < 3:
         return jsonify({'error': 'Question is too short.'}), 400
-    
     if len(question) > 2000:
         return jsonify({'error': 'Question is too long (max 2000 chars).'}), 400
     
     history = chat_sessions.get(session_id, [])
-    answer = ask_gemma(question, subject, mode, history, session_id)
+    prompt = build_prompt(question, subject, mode, history)
+    answer = call_gemma(prompt)
+    
+    # Save to history
+    if session_id not in chat_sessions:
+        chat_sessions[session_id] = []
+    chat_sessions[session_id].append({
+        "question": question,
+        "answer": answer,
+        "subject": subject
+    })
     
     return jsonify({
         'answer': answer,
@@ -164,8 +179,41 @@ def ask():
     })
 
 
+@app.route('/urdu', methods=['POST'])
+def urdu_explain():
+    """Handle Urdu explanation request."""
+    data = request.get_json()
+    question = data.get('question', '').strip()
+    session_id = data.get('session_id', 'default')
+    
+    if not question:
+        return jsonify({'error': 'Please enter a question.'}), 400
+    if len(question) < 3:
+        return jsonify({'error': 'Question is too short.'}), 400
+    
+    prompt = build_urdu_prompt(question)
+    answer = call_gemma(prompt)
+    
+    # Save to history
+    if session_id not in chat_sessions:
+        chat_sessions[session_id] = []
+    chat_sessions[session_id].append({
+        "question": f"[Urdu] {question}",
+        "answer": answer,
+        "subject": "urdu"
+    })
+    
+    return jsonify({
+        'answer': answer,
+        'question': question,
+        'subject': 'urdu',
+        'mode': 'urdu'
+    })
+
+
 @app.route('/history', methods=['GET'])
 def get_history():
+    """Return chat history."""
     session_id = request.args.get('session_id', 'default')
     history = chat_sessions.get(session_id, [])
     return jsonify({'history': history})
@@ -173,6 +221,7 @@ def get_history():
 
 @app.route('/clear', methods=['POST'])
 def clear_history():
+    """Clear chat history."""
     data = request.get_json()
     session_id = data.get('session_id', 'default')
     if session_id in chat_sessions:
@@ -180,10 +229,12 @@ def clear_history():
     return jsonify({'status': 'cleared'})
 
 
+# ─── RUN ─────────────────────────────────────────────────────
 if __name__ == '__main__':
-    print("=" * 50)
-    print("🎓 SnapSolve AI - Improved Version")
-    print(f"📍 http://127.0.0.1:5000")
-    print(f"🧠 {MODEL_NAME}")
-    print("=" * 50)
+    print("=" * 55)
+    print("  🎓  SnapSolve AI - Complete Version")
+    print("  📍  http://127.0.0.1:5000")
+    print(f"  🧠  {MODEL_NAME}")
+    print("  🇵🇰  Urdu Mode  |  🎤 Voice Input  |  🌙 Dark Mode")
+    print("=" * 55)
     app.run(debug=True)
