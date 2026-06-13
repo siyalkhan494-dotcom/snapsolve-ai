@@ -14,9 +14,8 @@ from flask import Flask, render_template, request, jsonify
 load_dotenv()
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL_NAME = "google/gemma-4-31b-it"
-
-if not API_KEY:
-    raise ValueError("❌ OPENROUTER_API_KEY not found in .env file")
+VALID_SUBJECTS = {"general", "math", "physics", "english"}
+VALID_MODES = {"full", "short"}
 
 app = Flask(__name__)
 chat_sessions = {}
@@ -108,6 +107,9 @@ Urdu Explanation:"""
 
 def call_gemma(prompt):
     """Send prompt to Gemma 4 via OpenRouter."""
+    if not API_KEY:
+        return "⚠️ OPENROUTER_API_KEY is missing. Add it in your .env file and restart the app."
+
     try:
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -124,9 +126,13 @@ def call_gemma(prompt):
         
         if response.status_code == 200:
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            choices = data.get("choices", [])
+            if choices and choices[0].get("message"):
+                return choices[0]["message"].get("content", "⚠️ Empty response from AI model.")
+            return "⚠️ Invalid response format from AI provider."
         else:
-            return f"⚠️ API Error: {response.status_code}"
+            error_text = response.text[:300]
+            return f"⚠️ API Error: {response.status_code} - {error_text}"
             
     except requests.exceptions.Timeout:
         return "⚠️ Request timed out. Please try again."
@@ -144,11 +150,11 @@ def home():
 @app.route('/ask', methods=['POST'])
 def ask():
     """Handle question submission."""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     question = data.get('question', '').strip()
     subject = data.get('subject', 'general')
     mode = data.get('mode', 'full')
-    session_id = data.get('session_id', 'default')
+    session_id = str(data.get('session_id', 'default'))[:64]
     
     if not question:
         return jsonify({'error': 'Please enter a question.'}), 400
@@ -156,6 +162,10 @@ def ask():
         return jsonify({'error': 'Question is too short.'}), 400
     if len(question) > 2000:
         return jsonify({'error': 'Question is too long (max 2000 chars).'}), 400
+    if subject not in VALID_SUBJECTS:
+        return jsonify({'error': 'Invalid subject selected.'}), 400
+    if mode not in VALID_MODES:
+        return jsonify({'error': 'Invalid answer mode selected.'}), 400
     
     history = chat_sessions.get(session_id, [])
     prompt = build_prompt(question, subject, mode, history)
@@ -182,9 +192,9 @@ def ask():
 @app.route('/urdu', methods=['POST'])
 def urdu_explain():
     """Handle Urdu explanation request."""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     question = data.get('question', '').strip()
-    session_id = data.get('session_id', 'default')
+    session_id = str(data.get('session_id', 'default'))[:64]
     
     if not question:
         return jsonify({'error': 'Please enter a question.'}), 400
